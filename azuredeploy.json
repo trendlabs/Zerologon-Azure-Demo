@@ -1,0 +1,790 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the administrator account of the new VM and domain"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password for the administrator account of the new VM and domain"
+            }
+        },
+         "adminLinuxPasswordOrKey": {
+            "type": "securestring",            
+            "metadata": {
+                "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "domainName": {
+            "type": "string",
+            "metadata": {
+                "description": "The FQDN of the Active Directory Domain to be created"
+            }
+        },
+        "dnsPrefix": {
+            "type": "string",
+            "metadata": {
+                "description": "The DNS prefix for the public IP address used by the Load Balancer"
+            }
+        },
+        "vmWinSize": {
+            "type": "string",
+            "defaultValue": "Standard_D4s_v4",
+            "metadata": {
+                "description": "Size of the Windows VMs"
+            }
+        },
+        "vmLinuxSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2s_v4",
+            "metadata": {
+                "description": "Size of the Linux VMs"
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The location of resources, such as templates and DSC modules, that the template depends on"
+            },
+            "defaultValue": "[deployment().properties.templateLink.uri]"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation. Leave it blank unless you need to provide your own value."
+            },
+            "defaultValue": ""
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "vmDcName": {
+            "type": "string",
+            "defaultValue": "DCVM",
+            "metadata": {
+                "description": "DC - Virtual machine name."
+            }
+        },
+        "vmWpName": {
+            "type": "string",
+            "defaultValue": "web",
+            "metadata": {
+                "description": "Wordpress - Virtual machine name."
+            }
+        },
+         "vmKaliName": {
+            "type": "string",
+            "defaultValue": "attacker",
+            "metadata": {
+                "description": "Kali - Virtual machine name."
+            }
+        },
+         "vmJumpName": {
+            "type": "string",
+            "defaultValue": "jump",
+            "metadata": {
+                "description": "Jump - Virtual machine name."
+            }
+        },
+        "virtualCorpNetworkName": {
+            "type": "string",
+            "defaultValue": "CORP-VNET",
+            "metadata": {
+                "description": "Corporate Virtual network name."
+            }
+        },
+        "vnetCorpNetAddrRange": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "description": "Corporate Virtual network address range."
+            }
+        },
+        "virtualAttackerNetworkName": {
+            "type": "string",
+            "defaultValue": "ATTACKER-VNET",
+            "metadata": {
+                "description": "Attacker Virtual network name."
+            }
+        },
+        "vnetAttackerNetAddrRange": {
+            "type": "string",
+            "defaultValue": "192.168.1.0/24",
+            "metadata": {
+                "description": "Attacker Virtual network address range."
+            }
+        },
+        "loadBalancerFrontEndIPName": {
+            "type": "string",
+            "defaultValue": "LBFE",
+            "metadata": {
+                "description": "Load balancer front end IP address name."
+            }
+        },
+        "backendAddressPoolName": {
+            "type": "string",
+            "defaultValue": "LBBE",
+            "metadata": {
+                "description": "Backend address pool name."
+            }
+        },
+        "inboundNatRulesName": {
+            "type": "string",
+            "defaultValue": "dcRDP",
+            "metadata": {
+                "description": "Inbound NAT rules name."
+            }
+        },
+        "nicDCName": {
+            "type": "string",
+            "defaultValue": "dcNic",
+            "metadata": {
+                "description": "DC - Network interface name."
+            }
+        },
+        "nicWPName": {
+            "type": "string",
+            "defaultValue": "wpNic",
+            "metadata": {
+                "description": "Wordpress - Network interface name."
+            }
+        },
+        "nicKaliName": {
+            "type": "string",
+            "defaultValue": "kaliNic",
+            "metadata": {
+                "description": "Kali - Network interface name."
+            }
+        },
+        "nicJumpName": {
+            "type": "string",
+            "defaultValue": "jumpNic",
+            "metadata": {
+                "description": "Jump - Network interface name."
+            }
+        },
+        "privDcIPAddress": {
+            "type": "string",
+            "defaultValue": "10.0.0.4",
+            "metadata": {
+                "description": "DC - Private IP address."
+            }
+        },
+        "subnetDCName": {
+            "type": "string",
+            "defaultValue": "dcSubnet",
+            "metadata": {
+                "description": "DC Subnet name."
+            }
+        },
+        "subnetWPName": {
+            "type": "string",
+            "defaultValue": "wpSubnet",
+            "metadata": {
+                "description": "Wordpress Subnet name."
+            }
+        },
+        "subnetAttackerName": {
+            "type": "string",
+            "defaultValue": "attackerSubnet",
+            "metadata": {
+                "description": "Attacker Subnet name."
+            }
+        },
+        "dcSubnetRange": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/25",
+            "metadata": {
+                "description": "DC Subnet IP range."
+            }
+        },
+        "wpSubnetRange": {
+            "type": "string",
+            "defaultValue": "10.0.0.128/25",
+            "metadata": {
+                "description": "Wordpress Subnet IP range."
+            }
+        },
+         "attackerSubnetRange": {
+            "type": "string",
+            "defaultValue": "192.168.1.0/25",
+            "metadata": {
+                "description": "Attacker Subnet IP range."
+            }
+        },
+         "pubJumpIPAddressName": {
+            "type": "string",
+            "defaultValue": "jumpPublicIP",
+            "metadata": {
+                "description": "Jump Public IP Address Name."
+            }
+        },
+        "publicIPAddressName": {
+            "type": "string",
+            "defaultValue": "adPublicIP",
+            "metadata": {
+                "description": "Subnet IP range."
+            }
+        },
+        "availabilitySetName": {
+            "type": "string",
+            "defaultValue": "adAvailabiltySet",
+            "metadata": {
+                "description": "Availability set name."
+            }
+        },
+        "loadBalancerName": {
+            "type": "string",
+            "defaultValue": "adLoadBalancer",
+            "metadata": {
+                "description": "Load balancer name."
+            }
+        },
+         "kaliCustomData": {
+            "type": "string",
+            "defaultValue": "echo kaliCustomData",
+            "metadata": {
+                "description": "Custom Data to initialize Kali VM"
+            }
+        },
+         "wpCustomData": {
+            "type": "string",
+            "defaultValue": "echo wpCustomData",
+            "metadata": {
+                "description": "Custom Data to initialize Wordpress VM"
+            }
+        }
+    },
+    "variables": {
+   
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                {
+                    "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                    "keyData": "[parameters('adminLinuxPasswordOrKey')]"
+                }
+                ]
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('pubJumpIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsPrefix')]"
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsPrefix')]"
+                }
+            }
+        },
+        
+        {
+            "type": "Microsoft.Compute/availabilitySets",
+            "apiVersion": "2019-03-01",
+            "location": "[parameters('location')]",
+            "name": "[parameters('availabilitySetName')]",
+            "properties": {
+                "PlatformUpdateDomainCount": 20,
+                "PlatformFaultDomainCount": 2
+            },
+            "sku": {
+                "name": "Aligned"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualCorpNetworkName')]",
+            "apiVersion": "2020-08-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetCorpNetAddrRange')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetDCName')]",
+                        "properties": {
+                        "addressPrefix": "[parameters('dcSubnetRange')]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('subnetWpName')]",
+                        "properties": {
+                        "addressPrefix": "[parameters('wpSubnetRange')]"
+                        }
+                    }
+                ]
+            }
+        },   
+         {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualAttackerNetworkName')]",
+            "apiVersion": "2020-08-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetAttackerNetAddrRange')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetAttackerName')]",
+                        "properties": {
+                        "addressPrefix": "[parameters('attackerSubnetRange')]"
+                        }
+                    }
+                ]
+            }
+        },               
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('loadBalancerName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[parameters('pubJumpIPAddressName')]"
+            ],
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "[parameters('loadBalancerFrontEndIPName')]",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('pubJumpIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[parameters('backendAddressPoolName')]"
+                    }
+                ],
+                "inboundNatRules": [
+                    {
+                        "name": "[parameters('inboundNatRulesName')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', parameters('loadBalancerName'), parameters('loadBalancerFrontEndIPName'))]"
+                            },
+                            "protocol": "Tcp",
+                            "frontendPort": 3389,
+                            "backendPort": 3389,
+                            "enableFloatingIP": false
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('nicDCName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "VNet"                
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "dc-ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "[parameters('privDcIPAddress')]",
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualCorpNetworkName'), parameters('subnetDCName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },       
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('nicWpName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "VNet"                
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "wp-ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",                           
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualCorpNetworkName'), parameters('subnetWPName'))]"
+                            }                            
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('nicKaliName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "VNet"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "kali-ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Static",                            
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualAttackerNetworkName'), parameters('subnetAttackerName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('nicJumpName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "VNet",
+                "[parameters('loadBalancerName')]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "jump-ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",                           
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualAttackerNetworkName'), parameters('subnetAttackerName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancerName'), parameters('backendAddressPoolName'))]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', parameters('loadBalancerName'), parameters('inboundNatRulesName'))]"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+       {
+            "apiVersion": "2021-03-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vmWpName')]",
+            "location": "[parameters('location')]",
+             "dependsOn": [
+                "[parameters('nicWpName')]"               
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmLinuxSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmWpName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminLinuxPasswordOrKey')]",
+                    "customData": "[base64(parameters('wpCustomData'))]",
+                    "linuxConfiguration": "[variables('linuxConfiguration')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "OpenLogic",
+                        "offer": "CentOS",
+                        "sku": "8_4-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "diskSizeGB": 60,
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    }         
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                        "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('nicWpName'))]"
+                        }
+                    ]
+                },               
+                "priority": "Spot",
+                "evictionPolicy": "Deallocate",
+                "billingProfile": {
+                    "maxPrice": 0.3
+                }         
+            }
+        },
+        {
+            "apiVersion": "2021-03-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vmKaliName')]",
+            "location": "[parameters('location')]",
+             "dependsOn": [
+                "[parameters('nicKaliName')]"               
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmLinuxSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmKaliName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminLinuxPasswordOrKey')]",
+                    "customData": "[base64(parameters('kaliCustomData'))]",
+                    "linuxConfiguration": "[variables('linuxConfiguration')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "OpenLogic",
+                        "offer": "CentOS",
+                        "sku": "8_4-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "diskSizeGB": 60,
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    }         
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                        "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('nicKaliName'))]"
+                        }
+                    ]
+                },               
+                "priority": "Spot",
+                "evictionPolicy": "Deallocate",
+                "billingProfile": {
+                    "maxPrice": 0.3
+                }         
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('vmJumpName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[parameters('nicJumpName')]",
+                "[parameters('availabilitySetName')]",
+                "[parameters('loadBalancerName')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmWinSize')]"
+                },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySetName'))]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmJumpName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2019-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmJumpName'),'_OSDisk')]",
+                        "caching": "ReadOnly",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    },
+                    "dataDisks": [
+                        {
+                            "name": "[concat(parameters('vmJumpName'), '_DataDisk')]",
+                            "caching": "ReadWrite",
+                            "createOption": "Empty",
+                            "diskSizeGB": 20,
+                            "managedDisk": {
+                                "storageAccountType": "StandardSSD_LRS"
+                            },
+                            "lun": 0
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicJumpName'))]"
+                        }
+                    ]
+                }
+            }           
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('vmDcName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[parameters('nicDCName')]"                
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmWinSize')]"
+                },               
+                "osProfile": {
+                    "computerName": "[parameters('vmDcName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "2016.127.20180613"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('vmDcName'),'_OSDisk')]",
+                        "caching": "ReadOnly",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    },
+                    "dataDisks": [
+                        {
+                            "name": "[concat(parameters('vmDcName'), '_DataDisk')]",
+                            "caching": "ReadWrite",
+                            "createOption": "Empty",
+                            "diskSizeGB": 20,
+                            "managedDisk": {
+                                "storageAccountType": "StandardSSD_LRS"
+                            },
+                            "lun": 0
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicDCName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "type": "extensions",
+                    "apiVersion": "2021-03-01",
+                    "name": "CreateADForest",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[parameters('vmDcName')]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.19",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "WMFVersion": "latest",
+                            "ModulesUrl": "[uri(parameters('_artifactsLocation'), concat('DSC/CreateADPDC.zip', parameters('_artifactsLocationSasToken')))]",
+                            "ConfigurationFunction": "CreateADPDC.ps1\\CreateADPDC",
+                            "Properties": {
+                                "DomainName": "[parameters('domainName')]",
+                                "AdminCreds": {
+                                    "UserName": "[parameters('adminUsername')]",
+                                    "Password": "PrivateSettingsRef:AdminPassword"
+                                }
+                            }                            
+                        },
+                        "protectedSettings": {
+                            "Items": {
+                                "AdminPassword": "[parameters('adminPassword')]"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-04-01",
+            "name": "UpdateVNetDNS",
+            "dependsOn": [
+                "CreateADForest"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/vnet-with-dns-server.json', parameters('_artifactsLocationSasToken')))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualNetworkName": {
+                        "value": "[parameters('virtualCorpNetworkName')]"
+                    },
+                    "virtualNetworkAddressRange": {
+                        "value": "[parameters('vnetCorpNetAddrRange')]"
+                    },
+                    "subnetName": {
+                        "value": "[parameters('subnetDCName')]"
+                    },
+                    "subnetRange": {
+                        "value": "[parameters('dcSubnetRange')]"
+                    },
+                    "DNSServerAddress": {
+                        "value": [
+                            "[parameters('privDcIPAddress')]"
+                        ]
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    }
+                }
+            }
+        }
+    ]
+}
