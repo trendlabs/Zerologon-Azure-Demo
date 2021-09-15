@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "value": "thanhnq"
+    },
+    "adminPassword": {
+      "value": "Tr3ndM1cr0"
+    },
+    "domainName": {
+      "value": "corp.mydomain.com"
+    },
+    "dnsPrefix": {
+      "value": "vnlabs"
+    },
+    "adminLinuxPasswordOrKey": {
+      "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/fNSKn1trtTZx2X5X2SyPj2fPqeYGTTy6J20EzYF3kOBKBVHw0BeJlyHEkEI5MomN3+2XGaNLZnYgYUjEW3inlEClyz59SHd1Auwj2h1KQjXmHRD19/FtI2UctSY47DRdUFRaa6XArG2Xx4fe3AV3NqRqF8VBvLYVMBeyFftuovos3nfKuCDoLzRgrPs6UVBJl3MMjC191dX6SMnopigy/BHdHfdAuImnD9YoSCr7scThbYxFgJ6QY3EajBUVHrh5M7j06esekLg5MIfvYql3vlcBP6j1yDAVsN49lGz2hUCvCW8Fa2LH4lWboWvjj8SzHVuo2T3AZqmXRuGI3QG/"
+    }
+  }
+}
